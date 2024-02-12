@@ -48,8 +48,6 @@ export class Node {
     }
 }
 export class Terminal extends Node {
-    public readonly type: node_type.TOKEN;
-    public readonly children: never[];
     public readonly token: Token;
 
     constructor (token: Token) {
