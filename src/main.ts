@@ -1,18 +1,9 @@
-import readline from "node:readline";
-import { stdin, stdout } from "node:process";
-import { init_lex, lex } from "./lex";
-import { Token, tok_type } from "./types";
-(async function () {
-    const rl = readline.createInterface({
-        input: stdin,
-        output: stdout,
-        terminal: false
-    });
+import fs from "node:fs";
+import util from "node:util";
+import { parse } from "./parse";
 
-    for await (const line of rl) {
-        init_lex(line);
-        for (let tok: Token; (tok = lex()).type != tok_type.EOF; ) {
-            console.log(tok_type[tok.type], ":", tok);
-        }
-    }
+(async function () {
+    const readfile = util.promisify(fs.readFile);
+    const src = await readfile("./src/main.ss", "utf-8");
+    console.log(parse(src));
 })();

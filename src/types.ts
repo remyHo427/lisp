@@ -26,14 +26,23 @@ export class Token {
 
 export enum node_type {
     TOKEN = 0,
-    FORMS,
+    DATUM,
+    LIST,
+    FORMALS,
+    BODY,
+    IF,
+    LAMBDA,
+    QUOTED,
+    APPLI,
     VAR_DEF,
+    FORMS,
+    PROGRAM
 }
 export class Node {
     public readonly type: node_type;
     public readonly children: Node[];
 
-    constructor (type: node_type, children: Node[]) {
+    constructor (type: node_type, ...children: Node[]) {
         this.type = type;
         this.children = children;
     }
@@ -44,7 +53,7 @@ export class Terminal extends Node {
     public readonly token: Token;
 
     constructor (token: Token) {
-        super(node_type.TOKEN, []);
+        super(node_type.TOKEN);
         this.token = token;
     }
 }
