@@ -1,4 +1,5 @@
-import { Node, Terminal, node_type, tok_type, Env } from "./types";
+import { Node, Terminal, node_type, tok_type } from "./types";
+import { init_global, Env } from "./env";
 
 export function evaluate_program(node: Node) {
     const global = init_global();
@@ -39,9 +40,8 @@ function eval_expr(expr: Node, env: Env) {
             return eval_apply(expr, env);
         case node_type.IF:
             return eval_if(expr, env);
-        // dunno how to do this part yet
-        // case node_type.LAMBDA:
-        //     return eval_lambda(expr, env);
+        case node_type.LAMBDA:
+            return eval_lambda(expr, env);
     }
 }
 function eval_tok(tok: Terminal, env: Env) {
@@ -68,52 +68,26 @@ function eval_if(expr: Node, env: Env) {
     const [ p, t, f ] = expr.children;
     return eval_expr(p, env) ? eval_expr(t, env) : eval_expr(f, env);
 }
-function make_env(): Env {
-    return new Map<string, any>();
-}
-function init_global() {
-    const global = make_env();
-
-    global.set("+", num_only((...a) => a.reduce((a, b) => a + b, 0)));
-    global.set("-", num_only((f, ...a) => f - a.reduce((a, b) => a + b, 0)));
-    global.set("*", num_only((...a) => a.reduce((a, b) => a * b, 1)));
-    global.set("/", num_only((f, ...a) => f / a.reduce((a, b) => a * b, 1)));
-    global.set("=", arity(2, num_only((a, b) => a === b)));
-    global.set(">=", arity(2, num_only((a, b) => a >= b)));
-    global.set("<=", arity(2, num_only((a, b) => a <= b)));
-    global.set(">", arity(2, num_only((a, b) => a > b)));
-    global.set("<", arity(2, num_only((a, b) => a < b)));
-    global.set("and", bool_only((...a) => a.every(c => c === true)));
-    global.set("or", bool_only((...a) => a.some(c => c === true)));
-    global.set("not", arity(1, bool_only(a => !a)));
-    global.set("print", (...a: any[]) => a.forEach(c => console.log(c)));
-
-    return global;
-}
-function num_only(fn: (...args: number[]) => any) {
-    return (...args: unknown[]) => {
-        if (args.some(a => typeof a !== "number")) {
-            throw new Error("non-number argument encountered");
-        } else {
-            return fn(...args as number[]);
-        }
-    }
-}
-function bool_only(fn: (...args: boolean[]) => any) {
-    return (...args: unknown[]) => {
-        if (args.some(a => typeof a !== "boolean")) {
-            throw new Error("non-boolean argument encountered");
-        } else {
-            return fn(...args as boolean[]);
-        }
-    }
-}
-function arity(n: number, fn: (...args: any[]) => any) {
+function eval_lambda(expr: Node, env: Env) {
     return (...args: any[]) => {
-        if (args.length != n) {
-            throw new Error("arity mismatch");
-        } else {
-            return fn(...args);
+        const [ formals, body ] = expr.children;
+        const local = new Env(env);
+
+        for (let i = 0; i < formals.children.length; i++) {
+            const formal = (formals.children[i] as Terminal).token.sval;
+            const param = args[i];
+            local.set(formal, param);
         }
+        
+        return eval_body(body, local);
     }
+}
+function eval_body(expr: Node, env: Env) {
+    let final: any;
+
+    for (const e of expr.children) {
+        final = eval_expr(e, env);
+    }
+
+    return final;
 }
