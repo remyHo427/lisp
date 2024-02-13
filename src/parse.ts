@@ -1,11 +1,10 @@
-import { init_lex, lex } from "./lex";
+import { Lexer } from "./lex";
 import { Node, Terminal, Token, node_type, tok_type } from "./types";
 
-let stack: Token[];
+const lexer = new Lexer();
 
 export function parse(str: string): Node {
-    init_lex(str);
-    stack = [];
+    lexer.init(str);
 
     const n = program();
     expect(tok_type.EOF);
@@ -22,31 +21,31 @@ function program() {
     return new Node(node_type.PROGRAM, ...forms);
 }
 function form(repeat = false): Node | null {
-    const tok = gettok();
+    const tok = lexer.gettok();
     switch (tok.type) {
         case tok_type.BOOLEAN:
         case tok_type.NUMBER:
         case tok_type.IDENT:
         case tok_type.QUOTE:
-            ungettok(tok);
+            lexer.ungettok(tok);
             return expression() as Node;
         case tok_type.LPAREN: {
-            const ntok = gettok();
+            const ntok = lexer.gettok();
             switch (ntok.type) {
                 case tok_type.DEFINE:
-                    ungettok(ntok, tok);
+                    lexer.ungettok(ntok, tok);
                     return variable_definition();
                 case tok_type.IF:
                 case tok_type.LAMBDA:
                 default:
-                    ungettok(ntok, tok);
+                    lexer.ungettok(ntok, tok);
                     return expression() as Node;
             }
         }
         default:
             if (!repeat) throw new Error("parsing error at form()");
             else {
-                ungettok(tok);
+                lexer.ungettok(tok);
                 return null;
             }
     }
@@ -61,40 +60,40 @@ function variable_definition() {
     return new Node(node_type.VAR_DEF, new Terminal(id), expr);
 }
 function expression(repeat = false) {
-    const tok = gettok();
+    const tok = lexer.gettok();
     switch (tok.type) {
         case tok_type.BOOLEAN:
         case tok_type.NUMBER:
         case tok_type.IDENT:
-            ungettok(tok);
+            lexer.ungettok(tok);
             return constant();
         case tok_type.QUOTE:
-            ungettok(tok);
+            lexer.ungettok(tok);
             return quoted();
         case tok_type.LPAREN: {
-            const ntok = gettok();
+            const ntok = lexer.gettok();
             switch (ntok.type) {
                 case tok_type.LAMBDA:
-                    ungettok(ntok, tok);
+                    lexer.ungettok(ntok, tok);
                     return lambda();
                 case tok_type.IF:
-                    ungettok(ntok, tok);
+                    lexer.ungettok(ntok, tok);
                     return if_expr();
                 default:
-                    ungettok(ntok, tok);
+                    lexer.ungettok(ntok, tok);
                     return application();
             }
         }
         default:
             if (!repeat) throw new Error("parsing error at expression();");
             else {
-                ungettok(tok);
+                lexer.ungettok(tok);
                 return null;
             }
     }
 }
 function constant(): Node {
-    const tok = gettok();
+    const tok = lexer.gettok();
     switch (tok.type) {
         case tok_type.BOOLEAN:
         case tok_type.NUMBER:
@@ -170,50 +169,42 @@ function list(): Node {
     return new Node(node_type.LIST, ...data);
 }
 function datum(repeat = false): Node | null {
-    const tok = gettok();
+    const tok = lexer.gettok();
     switch (tok.type) {
         case tok_type.BOOLEAN:
         case tok_type.NUMBER:
             return new Node(node_type.DATUM, new Terminal(tok));
         case tok_type.LPAREN: {
-            ungettok(tok);
+            lexer.ungettok(tok);
             const l = list();
             return l;
         }
         default:
             if (!repeat) throw new Error("parse error at datum()");
             else {
-                ungettok(tok);
+                lexer.ungettok(tok);
                 return null;
             }
     }
 }
 
 function expect(expected: tok_type, possible_eof = false) {
-    const tok = gettok();
+    const tok = lexer.gettok();
     if (tok.type === expected) {
         return tok;
     } else if (possible_eof && tok.type === tok_type.EOF) {
-        ungettok(tok);
+        lexer.ungettok(tok);
         return tok;
     } else {
         throw new Error(`parse error: expected ${tok_type[expected]}, got ${tok_type[tok.type]}`)
     }
 }
 function match(expected: tok_type) {
-    const tok = gettok();
+    const tok = lexer.gettok();
     if (tok.type === expected) {
         return tok;
     } else {
-        ungettok(tok);
+        lexer.ungettok(tok);
         return null;
-    }
-}
-function gettok() {
-    return stack.pop() || lex();
-}
-function ungettok(...toks: Token[]) {
-    for (const t of toks) {
-        stack.push(t);
     }
 }

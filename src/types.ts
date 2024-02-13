@@ -6,6 +6,9 @@ export enum tok_type {
     LAMBDA,
     IF,
     DEFINE,
+    COND,
+    ELSE,
+    CASE,
     IDENT,
     BOOLEAN,
     NUMBER
