@@ -1,210 +1,216 @@
 import { Lexer } from "./lex";
 import { Node, Terminal, Token, node_type, tok_type } from "./types";
 
-const lexer = new Lexer();
+export class Parser {
+    private readonly lexer: Lexer;
 
-export function parse(str: string): Node {
-    lexer.init(str);
-
-    const n = program();
-    expect(tok_type.EOF);
-    return n;
-}
-
-function program() {
-    const forms: Node[] = [];
-
-    for (let f: Node | null; f = form(true); ) {
-        forms.push(f);
+    constructor () {
+        this.lexer = new Lexer();
     }
 
-    return new Node(node_type.PROGRAM, ...forms);
-}
-function form(repeat = false): Node | null {
-    const tok = lexer.gettok();
-    switch (tok.type) {
-        case tok_type.BOOLEAN:
-        case tok_type.NUMBER:
-        case tok_type.IDENT:
-        case tok_type.QUOTE:
-            lexer.ungettok(tok);
-            return expression() as Node;
-        case tok_type.LPAREN: {
-            const ntok = lexer.gettok();
-            switch (ntok.type) {
-                case tok_type.DEFINE:
-                    lexer.ungettok(ntok, tok);
-                    return variable_definition();
-                case tok_type.IF:
-                case tok_type.LAMBDA:
-                default:
-                    lexer.ungettok(ntok, tok);
-                    return expression() as Node;
-            }
+    public init(src: string) {
+        this.lexer.init(src);
+    }
+    public parse(str: string): Node {
+        this.lexer.init(str);
+    
+        const n = this.program();
+        this.expect(tok_type.EOF);
+        return n;
+    }
+    
+    private program() {
+        const forms: Node[] = [];
+    
+        for (let f: Node | null; f = this.form(true); ) {
+            forms.push(f);
         }
-        default:
-            if (!repeat) throw new Error("parsing error at form()");
-            else {
-                lexer.ungettok(tok);
-                return null;
-            }
+    
+        return new Node(node_type.PROGRAM, ...forms);
     }
-}
-function variable_definition() {
-    expect(tok_type.LPAREN);
-    expect(tok_type.DEFINE);
-    const id = expect(tok_type.IDENT);
-    const expr = expression() as Node;
-    expect(tok_type.RPAREN);
-
-    return new Node(node_type.VAR_DEF, new Terminal(id), expr);
-}
-function expression(repeat = false) {
-    const tok = lexer.gettok();
-    switch (tok.type) {
-        case tok_type.BOOLEAN:
-        case tok_type.NUMBER:
-        case tok_type.IDENT:
-            lexer.ungettok(tok);
-            return constant();
-        case tok_type.QUOTE:
-            lexer.ungettok(tok);
-            return quoted();
-        case tok_type.LPAREN: {
-            const ntok = lexer.gettok();
-            switch (ntok.type) {
-                case tok_type.LAMBDA:
-                    lexer.ungettok(ntok, tok);
-                    return lambda();
-                case tok_type.IF:
-                    lexer.ungettok(ntok, tok);
-                    return if_expr();
-                default:
-                    lexer.ungettok(ntok, tok);
-                    return application();
+    private form(repeat = false): Node | null {
+        const tok = this.lexer.gettok();
+        switch (tok.type) {
+            case tok_type.BOOLEAN:
+            case tok_type.NUMBER:
+            case tok_type.IDENT:
+            case tok_type.QUOTE:
+                this.lexer.ungettok(tok);
+                return this.expression() as Node;
+            case tok_type.LPAREN: {
+                const ntok = this.lexer.gettok();
+                switch (ntok.type) {
+                    case tok_type.DEFINE:
+                        this.lexer.ungettok(ntok, tok);
+                        return this.variable_definition();
+                    case tok_type.IF:
+                    case tok_type.LAMBDA:
+                    default:
+                        this.lexer.ungettok(ntok, tok);
+                        return this.expression() as Node;
+                }
             }
+            default:
+                if (!repeat) throw new Error("parsing error at form()");
+                else {
+                    this.lexer.ungettok(tok);
+                    return null;
+                }
         }
-        default:
-            if (!repeat) throw new Error("parsing error at expression();");
-            else {
-                lexer.ungettok(tok);
-                return null;
+    }
+    private variable_definition() {
+        this.expect(tok_type.LPAREN);
+        this.expect(tok_type.DEFINE);
+        const id = this.expect(tok_type.IDENT);
+        const expr = this.expression() as Node;
+        this.expect(tok_type.RPAREN);
+    
+        return new Node(node_type.VAR_DEF, new Terminal(id), expr);
+    }
+    private expression(repeat = false) {
+        const tok = this.lexer.gettok();
+        switch (tok.type) {
+            case tok_type.BOOLEAN:
+            case tok_type.NUMBER:
+            case tok_type.IDENT:
+                this.lexer.ungettok(tok);
+                return this.constant();
+            case tok_type.QUOTE:
+                this.lexer.ungettok(tok);
+                return this.quoted();
+            case tok_type.LPAREN: {
+                const ntok = this.lexer.gettok();
+                switch (ntok.type) {
+                    case tok_type.LAMBDA:
+                        this.lexer.ungettok(ntok, tok);
+                        return this.lambda();
+                    case tok_type.IF:
+                        this.lexer.ungettok(ntok, tok);
+                        return this.if_expr();
+                    default:
+                        this.lexer.ungettok(ntok, tok);
+                        return this.application();
+                }
             }
-    }
-}
-function constant(): Node {
-    const tok = lexer.gettok();
-    switch (tok.type) {
-        case tok_type.BOOLEAN:
-        case tok_type.NUMBER:
-        case tok_type.IDENT:
-            return new Terminal(tok);
-        default:
-            throw new Error("parsing error at constant()");
-    }
-}
-function application(): Node {
-    expect(tok_type.LPAREN);
-    const head = expression() as Node;
-    const elems: Node[] = [];
-    for (let e: Node | null; e = expression(true); ) {
-        elems.push(e);
-    }
-    expect(tok_type.RPAREN);
-
-    return new Node(node_type.APPLI, head, ...elems);
-}
-function quoted(): Node {
-    expect(tok_type.QUOTE);
-    const d = datum() as Node;
-
-    return new Node(node_type.QUOTED, d);
-}
-function lambda(): Node {
-    expect(tok_type.LPAREN);
-    expect(tok_type.LAMBDA);
-    const f = formals();
-    const b = body();
-    expect(tok_type.RPAREN);
-
-    return new Node(node_type.LAMBDA, f, b);
-}
-function if_expr(): Node {
-    expect(tok_type.LPAREN);
-    expect(tok_type.IF);
-    const p = expression(false) as Node;
-    const t = expression(false) as Node;        
-    const f = expression(false) as Node;
-    expect(tok_type.RPAREN);
-    return new Node(node_type.IF, p, t, f);
-}
-function body() {
-    const first = expression() as Node;
-    const exprs: Node[] = [];
-    for (let e: Node | null; e = expression(true); ) {
-        exprs.push(e);
-    }
-    return new Node(node_type.BODY, first, ...exprs);
-}
-function formals(): Node {
-    expect(tok_type.LPAREN);
-    const vars: Node[] = [];
-
-    for (let tok: Token | null; tok = match(tok_type.IDENT); ) {
-        vars.push(new Terminal(tok));
-    }
-
-    expect(tok_type.RPAREN);
-    return new Node(node_type.FORMALS, ...vars);
-}
-function list(): Node {
-    expect(tok_type.LPAREN);
-    const data: Node[] = [];
-
-    for (let d: Node | null; d = datum(true); ) {
-        data.push(d);
-    }
-    expect(tok_type.RPAREN);
-
-    return new Node(node_type.LIST, ...data);
-}
-function datum(repeat = false): Node | null {
-    const tok = lexer.gettok();
-    switch (tok.type) {
-        case tok_type.BOOLEAN:
-        case tok_type.NUMBER:
-            return new Node(node_type.DATUM, new Terminal(tok));
-        case tok_type.LPAREN: {
-            lexer.ungettok(tok);
-            const l = list();
-            return l;
+            default:
+                if (!repeat) throw new Error("parsing error at expression();");
+                else {
+                    this.lexer.ungettok(tok);
+                    return null;
+                }
         }
-        default:
-            if (!repeat) throw new Error("parse error at datum()");
-            else {
-                lexer.ungettok(tok);
-                return null;
+    }
+    private constant(): Node {
+        const tok = this.lexer.gettok();
+        switch (tok.type) {
+            case tok_type.BOOLEAN:
+            case tok_type.NUMBER:
+            case tok_type.IDENT:
+                return new Terminal(tok);
+            default:
+                throw new Error("parsing error at constant()");
+        }
+    }
+    private application(): Node {
+        this.expect(tok_type.LPAREN);
+        const head = this.expression() as Node;
+        const elems: Node[] = [];
+        for (let e: Node | null; e = this.expression(true); ) {
+            elems.push(e);
+        }
+        this.expect(tok_type.RPAREN);
+    
+        return new Node(node_type.APPLI, head, ...elems);
+    }
+    private quoted(): Node {
+        this.expect(tok_type.QUOTE);
+        const d = this.datum() as Node;
+    
+        return new Node(node_type.QUOTED, d);
+    }
+    private lambda(): Node {
+        this.expect(tok_type.LPAREN);
+        this.expect(tok_type.LAMBDA);
+        const f = this.formals();
+        const b = this.body();
+        this.expect(tok_type.RPAREN);
+    
+        return new Node(node_type.LAMBDA, f, b);
+    }
+    private if_expr(): Node {
+        this.expect(tok_type.LPAREN);
+        this.expect(tok_type.IF);
+        const p = this.expression(false) as Node;
+        const t = this.expression(false) as Node;        
+        const f = this.expression(false) as Node;
+        this.expect(tok_type.RPAREN);
+        return new Node(node_type.IF, p, t, f);
+    }
+    private body() {
+        const first = this.expression() as Node;
+        const exprs: Node[] = [];
+        for (let e: Node | null; e = this.expression(true); ) {
+            exprs.push(e);
+        }
+        return new Node(node_type.BODY, first, ...exprs);
+    }
+    private formals(): Node {
+        this.expect(tok_type.LPAREN);
+        const vars: Node[] = [];
+    
+        for (let tok: Token | null; tok = this.match(tok_type.IDENT); ) {
+            vars.push(new Terminal(tok));
+        }
+    
+        this.expect(tok_type.RPAREN);
+        return new Node(node_type.FORMALS, ...vars);
+    }
+    private list(): Node {
+        this.expect(tok_type.LPAREN);
+        const data: Node[] = [];
+    
+        for (let d: Node | null; d = this.datum(true); ) {
+            data.push(d);
+        }
+        this.expect(tok_type.RPAREN);
+    
+        return new Node(node_type.LIST, ...data);
+    }
+    private datum(repeat = false): Node | null {
+        const tok = this.lexer.gettok();
+        switch (tok.type) {
+            case tok_type.BOOLEAN:
+            case tok_type.NUMBER:
+                return new Node(node_type.DATUM, new Terminal(tok));
+            case tok_type.LPAREN: {
+                this. lexer.ungettok(tok);
+                const l = this.list();
+                return l;
             }
+            default:
+                if (!repeat) throw new Error("parse error at datum()");
+                else {
+                    this.lexer.ungettok(tok);
+                    return null;
+                }
+        }
     }
-}
 
-function expect(expected: tok_type, possible_eof = false) {
-    const tok = lexer.gettok();
-    if (tok.type === expected) {
-        return tok;
-    } else if (possible_eof && tok.type === tok_type.EOF) {
-        lexer.ungettok(tok);
-        return tok;
-    } else {
-        throw new Error(`parse error: expected ${tok_type[expected]}, got ${tok_type[tok.type]}`)
+    private expect(expected: tok_type) {
+        const tok = this.lexer.gettok();
+        if (tok.type === expected) {
+            return tok;
+        } else {
+            throw new Error(`parse error: expected ${tok_type[expected]}, got ${tok_type[tok.type]}`)
+        }
     }
-}
-function match(expected: tok_type) {
-    const tok = lexer.gettok();
-    if (tok.type === expected) {
-        return tok;
-    } else {
-        lexer.ungettok(tok);
-        return null;
+    private match(expected: tok_type) {
+        const tok = this.lexer.gettok();
+        if (tok.type === expected) {
+            return tok;
+        } else {
+            this.lexer.ungettok(tok);
+            return null;
+        }
     }
 }

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import util from "node:util";
 import process from "node:process";
 import { createInterface } from "node:readline";
-import { parse } from "./parse";
+import { Parser } from "./parse";
 import { evaluate_program, init_repl } from "./eval";
 
 const argv = process.argv.slice(2);
@@ -25,10 +25,11 @@ async function repl() {
         terminal: false
     });
     const repl_fn = init_repl();
+    const parser = new Parser();
 
     process.stdout.write("> ");
     for await (const l of rl) {
-        repl_fn(parse(l));
+        repl_fn(parser.parse(l));
         process.stdout.write("> ");
     }
 }
@@ -36,5 +37,7 @@ async function repl() {
 async function run(file: string) {
     const readfile = util.promisify(fs.readFile);
     const src = await readfile(file, "utf-8");
-    evaluate_program(parse(src));
+    const parser = new Parser();
+
+    evaluate_program(parser.parse(src));
 }
