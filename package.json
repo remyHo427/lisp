@@ -6,7 +6,8 @@
   "dependencies": {},
   "scripts": {
     "build": "esbuild --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
-    "start": "node ./dist/main.js"
+    "repl": "node ./dist/main.js --repl",
+    "rn": "node ./dist/main.js ./src/main.ss"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",

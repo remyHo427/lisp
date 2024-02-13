@@ -1,12 +1,19 @@
-import { Node, Terminal, node_type, tok_type } from "./types";
-
-type Env = Map<string, any>;
+import { Node, Terminal, node_type, tok_type, Env } from "./types";
 
 export function evaluate_program(node: Node) {
     const global = init_global();
 
     for (const form of node.children) {
         eval_form(form, global);
+    }
+}
+export function init_repl() {
+    const global = init_global();
+    
+    return (node: Node) => {
+        for (const form of node.children) {
+            eval_form(form, global);
+        }
     }
 }
 

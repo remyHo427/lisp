@@ -55,3 +55,4 @@ export class Terminal extends Node {
         this.token = token;
     }
 }
+export type Env = Map<string, any>;
