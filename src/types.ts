@@ -1,25 +1,38 @@
-export enum tok_type {
+export enum Toktype {
     EOF = 0,
+    //
     LPAREN,
     RPAREN,
+    QUOT,
+    VSTART,     // #(
+    //
+    BEGIN,
+    LET_SYNTAX,
+    LETRECT_SYNTAX,
+    DEFINE,
+    DEFINE_SYNTAX,
     QUOTE,
     LAMBDA,
     IF,
-    DEFINE,
-    COND,
-    ELSE,
-    CASE,
-    IDENT,
+    SET,
+    //
     BOOLEAN,
-    NUMBER
+    NUMBER,
+    CHARACTER,
+    STRING,
+    SYMBOL,
+    LIST,
+    //
+    IDENT
 }
+
 export class Token {
-    public readonly type: tok_type;
+    public readonly type: Toktype
     public readonly sval: string;
     public readonly nval: number;
     public readonly bval: boolean;
 
-    constructor (type: tok_type, sval = "", nval = 0, bval = false) {
+    constructor (type: Toktype, sval = "", nval = 0, bval = false) {
         this.type = type;
         this.sval = sval;
         this.nval = nval;

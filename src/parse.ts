@@ -1,5 +1,5 @@
 import { Lexer } from "./lex";
-import { Node, Terminal, Token, node_type, tok_type } from "./types";
+import { Node, Terminal, Token, node_type, Toktype } from "./types";
 
 export class Parser {
     private readonly lexer: Lexer;
@@ -15,7 +15,7 @@ export class Parser {
         this.lexer.init(str);
     
         const n = this.program();
-        this.expect(tok_type.EOF);
+        this.expect(Toktype.EOF);
         return n;
     }
     
@@ -31,20 +31,20 @@ export class Parser {
     private form(repeat = false): Node | null {
         const tok = this.lexer.gettok();
         switch (tok.type) {
-            case tok_type.BOOLEAN:
-            case tok_type.NUMBER:
-            case tok_type.IDENT:
-            case tok_type.QUOTE:
+            case Toktype.BOOLEAN:
+            case Toktype.NUMBER:
+            case Toktype.IDENT:
+            case Toktype.QUOTE:
                 this.lexer.ungettok(tok);
                 return this.expression() as Node;
-            case tok_type.LPAREN: {
+            case Toktype.LPAREN: {
                 const ntok = this.lexer.gettok();
                 switch (ntok.type) {
-                    case tok_type.DEFINE:
+                    case Toktype.DEFINE:
                         this.lexer.ungettok(ntok, tok);
                         return this.variable_definition();
-                    case tok_type.IF:
-                    case tok_type.LAMBDA:
+                    case Toktype.IF:
+                    case Toktype.LAMBDA:
                     default:
                         this.lexer.ungettok(ntok, tok);
                         return this.expression() as Node;
@@ -59,32 +59,32 @@ export class Parser {
         }
     }
     private variable_definition() {
-        this.expect(tok_type.LPAREN);
-        this.expect(tok_type.DEFINE);
-        const id = this.expect(tok_type.IDENT);
+        this.expect(Toktype.LPAREN);
+        this.expect(Toktype.DEFINE);
+        const id = this.expect(Toktype.IDENT);
         const expr = this.expression() as Node;
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
     
         return new Node(node_type.VAR_DEF, new Terminal(id), expr);
     }
     private expression(repeat = false) {
         const tok = this.lexer.gettok();
         switch (tok.type) {
-            case tok_type.BOOLEAN:
-            case tok_type.NUMBER:
-            case tok_type.IDENT:
+            case Toktype.BOOLEAN:
+            case Toktype.NUMBER:
+            case Toktype.IDENT:
                 this.lexer.ungettok(tok);
                 return this.constant();
-            case tok_type.QUOTE:
+            case Toktype.QUOTE:
                 this.lexer.ungettok(tok);
                 return this.quoted();
-            case tok_type.LPAREN: {
+            case Toktype.LPAREN: {
                 const ntok = this.lexer.gettok();
                 switch (ntok.type) {
-                    case tok_type.LAMBDA:
+                    case Toktype.LAMBDA:
                         this.lexer.ungettok(ntok, tok);
                         return this.lambda();
-                    case tok_type.IF:
+                    case Toktype.IF:
                         this.lexer.ungettok(ntok, tok);
                         return this.if_expr();
                     default:
@@ -103,47 +103,47 @@ export class Parser {
     private constant(): Node {
         const tok = this.lexer.gettok();
         switch (tok.type) {
-            case tok_type.BOOLEAN:
-            case tok_type.NUMBER:
-            case tok_type.IDENT:
+            case Toktype.BOOLEAN:
+            case Toktype.NUMBER:
+            case Toktype.IDENT:
                 return new Terminal(tok);
             default:
                 throw new Error("parsing error at constant()");
         }
     }
     private application(): Node {
-        this.expect(tok_type.LPAREN);
+        this.expect(Toktype.LPAREN);
         const head = this.expression() as Node;
         const elems: Node[] = [];
         for (let e: Node | null; e = this.expression(true); ) {
             elems.push(e);
         }
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
     
         return new Node(node_type.APPLI, head, ...elems);
     }
     private quoted(): Node {
-        this.expect(tok_type.QUOTE);
+        this.expect(Toktype.QUOTE);
         const d = this.datum() as Node;
     
         return new Node(node_type.QUOTED, d);
     }
     private lambda(): Node {
-        this.expect(tok_type.LPAREN);
-        this.expect(tok_type.LAMBDA);
+        this.expect(Toktype.LPAREN);
+        this.expect(Toktype.LAMBDA);
         const f = this.formals();
         const b = this.body();
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
     
         return new Node(node_type.LAMBDA, f, b);
     }
     private if_expr(): Node {
-        this.expect(tok_type.LPAREN);
-        this.expect(tok_type.IF);
+        this.expect(Toktype.LPAREN);
+        this.expect(Toktype.IF);
         const p = this.expression(false) as Node;
         const t = this.expression(false) as Node;        
         const f = this.expression(false) as Node;
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
         return new Node(node_type.IF, p, t, f);
     }
     private body() {
@@ -155,34 +155,34 @@ export class Parser {
         return new Node(node_type.BODY, first, ...exprs);
     }
     private formals(): Node {
-        this.expect(tok_type.LPAREN);
+        this.expect(Toktype.LPAREN);
         const vars: Node[] = [];
     
-        for (let tok: Token | null; tok = this.match(tok_type.IDENT); ) {
+        for (let tok: Token | null; tok = this.match(Toktype.IDENT); ) {
             vars.push(new Terminal(tok));
         }
     
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
         return new Node(node_type.FORMALS, ...vars);
     }
     private list(): Node {
-        this.expect(tok_type.LPAREN);
+        this.expect(Toktype.LPAREN);
         const data: Node[] = [];
     
         for (let d: Node | null; d = this.datum(true); ) {
             data.push(d);
         }
-        this.expect(tok_type.RPAREN);
+        this.expect(Toktype.RPAREN);
     
         return new Node(node_type.LIST, ...data);
     }
     private datum(repeat = false): Node | null {
         const tok = this.lexer.gettok();
         switch (tok.type) {
-            case tok_type.BOOLEAN:
-            case tok_type.NUMBER:
+            case Toktype.BOOLEAN:
+            case Toktype.NUMBER:
                 return new Node(node_type.DATUM, new Terminal(tok));
-            case tok_type.LPAREN: {
+            case Toktype.LPAREN: {
                 this. lexer.ungettok(tok);
                 const l = this.list();
                 return l;
@@ -196,15 +196,15 @@ export class Parser {
         }
     }
 
-    private expect(expected: tok_type) {
+    private expect(expected: Toktype) {
         const tok = this.lexer.gettok();
         if (tok.type === expected) {
             return tok;
         } else {
-            throw new Error(`parse error: expected ${tok_type[expected]}, got ${tok_type[tok.type]}`)
+            throw new Error(`parse error: expected ${Toktype[expected]}, got ${Toktype[tok.type]}`)
         }
     }
-    private match(expected: tok_type) {
+    private match(expected: Toktype) {
         const tok = this.lexer.gettok();
         if (tok.type === expected) {
             return tok;

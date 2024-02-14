@@ -7,3 +7,5 @@
 (define bino
     (lambda (n k)
         (/ (fact n) (* (fact k) (fact (- n k))))))
+
+(print (fact 5))

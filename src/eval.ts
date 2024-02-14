@@ -1,4 +1,4 @@
-import { Node, Terminal, node_type, tok_type } from "./types";
+import { Node, Terminal, node_type, Toktype } from "./types";
 import { init_global, Env } from "./env";
 
 export function evaluate_program(node: Node) {
@@ -46,11 +46,11 @@ function eval_expr(expr: Node, env: Env) {
 }
 function eval_tok(tok: Terminal, env: Env) {
     switch (tok.token.type) {
-        case tok_type.BOOLEAN:
+        case Toktype.BOOLEAN:
             return tok.token.bval;
-        case tok_type.NUMBER:
+        case Toktype.NUMBER:
             return tok.token.nval;
-        case tok_type.IDENT:
+        case Toktype.IDENT:
             return env.get(tok.token.sval);
     }
 }
