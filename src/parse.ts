@@ -1,5 +1,5 @@
 import { Lexer } from "./lex";
-import { Node, Terminal, Token, node_type, Toktype } from "./types";
+import { Node, Terminal, Token, Nodetype, Toktype } from "./types";
 
 export class Parser {
     private readonly lexer: Lexer;
@@ -26,7 +26,7 @@ export class Parser {
             forms.push(f);
         }
     
-        return new Node(node_type.PROGRAM, ...forms);
+        return new Node(Nodetype.PROGRAM, ...forms);
     }
     private form(repeat = false): Node | null {
         const tok = this.lexer.gettok();
@@ -65,7 +65,7 @@ export class Parser {
         const expr = this.expression() as Node;
         this.expect(Toktype.RPAREN);
     
-        return new Node(node_type.VAR_DEF, new Terminal(id), expr);
+        return new Node(Nodetype.VAR_DEF, new Terminal(id), expr);
     }
     private expression(repeat = false) {
         const tok = this.lexer.gettok();
@@ -120,13 +120,13 @@ export class Parser {
         }
         this.expect(Toktype.RPAREN);
     
-        return new Node(node_type.APPLI, head, ...elems);
+        return new Node(Nodetype.APPLI, head, ...elems);
     }
     private quoted(): Node {
         this.expect(Toktype.QUOTE);
         const d = this.datum() as Node;
     
-        return new Node(node_type.QUOTED, d);
+        return new Node(Nodetype.QUOTED, d);
     }
     private lambda(): Node {
         this.expect(Toktype.LPAREN);
@@ -135,7 +135,7 @@ export class Parser {
         const b = this.body();
         this.expect(Toktype.RPAREN);
     
-        return new Node(node_type.LAMBDA, f, b);
+        return new Node(Nodetype.LAMBDA, f, b);
     }
     private if_expr(): Node {
         this.expect(Toktype.LPAREN);
@@ -144,7 +144,7 @@ export class Parser {
         const t = this.expression(false) as Node;        
         const f = this.expression(false) as Node;
         this.expect(Toktype.RPAREN);
-        return new Node(node_type.IF, p, t, f);
+        return new Node(Nodetype.IF, p, t, f);
     }
     private body() {
         const first = this.expression() as Node;
@@ -152,7 +152,7 @@ export class Parser {
         for (let e: Node | null; e = this.expression(true); ) {
             exprs.push(e);
         }
-        return new Node(node_type.BODY, first, ...exprs);
+        return new Node(Nodetype.BODY, first, ...exprs);
     }
     private formals(): Node {
         this.expect(Toktype.LPAREN);
@@ -163,7 +163,7 @@ export class Parser {
         }
     
         this.expect(Toktype.RPAREN);
-        return new Node(node_type.FORMALS, ...vars);
+        return new Node(Nodetype.FORMALS, ...vars);
     }
     private list(): Node {
         this.expect(Toktype.LPAREN);
@@ -174,14 +174,14 @@ export class Parser {
         }
         this.expect(Toktype.RPAREN);
     
-        return new Node(node_type.LIST, ...data);
+        return new Node(Nodetype.LIST, ...data);
     }
     private datum(repeat = false): Node | null {
         const tok = this.lexer.gettok();
         switch (tok.type) {
             case Toktype.BOOLEAN:
             case Toktype.NUMBER:
-                return new Node(node_type.DATUM, new Terminal(tok));
+                return new Node(Nodetype.DATUM, new Terminal(tok));
             case Toktype.LPAREN: {
                 this. lexer.ungettok(tok);
                 const l = this.list();

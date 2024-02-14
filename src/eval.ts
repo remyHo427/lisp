@@ -1,4 +1,4 @@
-import { Node, Terminal, node_type, Toktype } from "./types";
+import { Node, Terminal, Nodetype, Toktype } from "./types";
 import { init_global, Env } from "./env";
 
 export function evaluate_program(node: Node) {
@@ -19,7 +19,7 @@ export function init_repl() {
 }
 
 function eval_form(form: Node, env: Env) {
-    if (form.type === node_type.VAR_DEF) {
+    if (form.type === Nodetype.VAR_DEF) {
         return eval_vardef(form, env);
     } else {
         return eval_expr(form, env);
@@ -34,13 +34,13 @@ function eval_vardef(vardef: Node, env: Env) {
 
 function eval_expr(expr: Node, env: Env) {
     switch (expr.type) {
-        case node_type.TOKEN:
+        case Nodetype.TOKEN:
             return eval_tok(expr as Terminal, env);
-        case node_type.APPLI:
+        case Nodetype.APPLI:
             return eval_apply(expr, env);
-        case node_type.IF:
+        case Nodetype.IF:
             return eval_if(expr, env);
-        case node_type.LAMBDA:
+        case Nodetype.LAMBDA:
             return eval_lambda(expr, env);
     }
 }

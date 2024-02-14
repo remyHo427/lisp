@@ -40,7 +40,7 @@ export class Token {
     }
 }
 
-export enum node_type {
+export enum Nodetype {
     TOKEN = 0,
     DATUM,
     LIST,
@@ -55,10 +55,10 @@ export enum node_type {
     PROGRAM
 }
 export class Node {
-    public readonly type: node_type;
+    public readonly type: Nodetype;
     public readonly children: Node[];
 
-    constructor (type: node_type, ...children: Node[]) {
+    constructor (type: Nodetype, ...children: Node[]) {
         this.type = type;
         this.children = children;
     }
@@ -67,7 +67,7 @@ export class Terminal extends Node {
     public readonly token: Token;
 
     constructor (token: Token) {
-        super(node_type.TOKEN);
+        super(Nodetype.TOKEN);
         this.token = token;
     }
 }
