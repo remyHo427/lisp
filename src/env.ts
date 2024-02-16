@@ -1,3 +1,5 @@
+import { List } from "./list";
+
 export class Env {
     private readonly parent: Env | null;
     private readonly vars: Map<string, any>;
@@ -41,8 +43,11 @@ export function init_global(): Env {
     global.set("and", bool_only((...a) => a.every(c => c === true)));
     global.set("or", bool_only((...a) => a.some(c => c === true)));
     global.set("not", arity(1, bool_only(a => !a)));
-    global.set("print", (...a: any[]) => a.forEach(c => console.log(c)));
-
+    global.set("car", arity(1, List.car));
+    global.set("cdr", arity(1, List.cdr));
+    global.set("null?", arity(1, List.isNull));
+    global.set("p", console.log);
+    
     return global;
 }
 function num_only(fn: (...args: number[]) => any) {

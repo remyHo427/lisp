@@ -34,7 +34,7 @@ export class Parser {
             case Toktype.BOOLEAN:
             case Toktype.NUMBER:
             case Toktype.IDENT:
-            case Toktype.QUOTE:
+            case Toktype.QUOT:
                 this.lexer.ungettok(tok);
                 return this.expression() as Node;
             case Toktype.LPAREN: {
@@ -75,7 +75,7 @@ export class Parser {
             case Toktype.IDENT:
                 this.lexer.ungettok(tok);
                 return this.constant();
-            case Toktype.QUOTE:
+            case Toktype.QUOT:
                 this.lexer.ungettok(tok);
                 return this.quoted();
             case Toktype.LPAREN: {
@@ -123,7 +123,7 @@ export class Parser {
         return new Node(Nodetype.APPLI, head, ...elems);
     }
     private quoted(): Node {
-        this.expect(Toktype.QUOTE);
+        this.expect(Toktype.QUOT);
         const d = this.datum() as Node;
     
         return new Node(Nodetype.QUOTED, d);
@@ -181,6 +181,7 @@ export class Parser {
         switch (tok.type) {
             case Toktype.BOOLEAN:
             case Toktype.NUMBER:
+            case Toktype.IDENT:
                 return new Node(Nodetype.DATUM, new Terminal(tok));
             case Toktype.LPAREN: {
                 this. lexer.ungettok(tok);

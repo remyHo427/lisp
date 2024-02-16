@@ -1,4 +1,5 @@
 import { Node, Terminal, Nodetype, Toktype } from "./types";
+import { List } from "./list";
 import { init_global, Env } from "./env";
 
 export function evaluate_program(node: Node) {
@@ -13,7 +14,7 @@ export function init_repl() {
     
     return (node: Node) => {
         for (const form of node.children) {
-            eval_form(form, global);
+            console.log(eval_form(form, global));
         }
     }
 }
@@ -42,6 +43,10 @@ function eval_expr(expr: Node, env: Env) {
             return eval_if(expr, env);
         case Nodetype.LAMBDA:
             return eval_lambda(expr, env);
+        case Nodetype.QUOTED:
+            return eval_quoted(expr, env);
+        default:
+            console.log("unsupported expression type: ", Nodetype[expr.type]);
     }
 }
 function eval_tok(tok: Terminal, env: Env) {
@@ -90,4 +95,42 @@ function eval_body(expr: Node, env: Env) {
     }
 
     return final;
+}
+function eval_quoted(expr: Node, env: Env) {
+    const quoted = expr.children[0];
+    switch (quoted.type) {
+        case Nodetype.DATUM:
+            return eval_datum(quoted, env);
+        case Nodetype.LIST:
+            return eval_list(quoted, env);
+    }
+}
+function eval_list(list: Node, env: Env): List {
+    if (!list.children.length) {
+        return List.getNull();
+    }
+    
+    let curr: List;
+    let prev: List;
+    let head = new List(null, null);
+    prev = curr = head;
+    for (const c of list.children) {
+        switch (c.type) {
+            case Nodetype.LIST:
+                curr.value = eval_list(c, env);
+                break;
+            case Nodetype.DATUM:
+                curr.value = eval_datum(c, env);
+                break;
+        }
+        curr.next = new List(null, null);
+        prev = curr;
+        curr = curr.next;
+    }
+    prev.next = List.getNull();
+
+    return head;
+}
+function eval_datum(datum: Node, env: Env) {
+    return eval_tok(datum.children[0] as Terminal, env);
 }
