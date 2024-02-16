@@ -6,6 +6,8 @@ export class Lexer {
     private readonly keywords: Map<string, Toktype>;
     private src: string;
     private sp: number;
+    private line: number;
+    private col: number;
 
     constructor () {
         this.stack = [];
@@ -14,7 +16,7 @@ export class Lexer {
         this.keywords.set("let-syntax", Toktype.LET_SYNTAX);
         this.keywords.set("letrec-syntax", Toktype.LETRECT_SYNTAX);
         this.keywords.set("define", Toktype.DEFINE);
-        this.keywords.set("define-syntaax", Toktype.DEFINE_SYNTAX);
+        this.keywords.set("define-syntax", Toktype.DEFINE_SYNTAX);
         this.keywords.set("quote", Toktype.QUOTE);
         this.keywords.set("lambda", Toktype.LAMBDA);
         this.keywords.set("if", Toktype.IF);
@@ -23,12 +25,19 @@ export class Lexer {
     public init(str: string) {
         this.src = str;
         this.sp = 0;
+        this.line = 1;
+        this.col = 0;
     }
     public lex() {
         while (!this.isend()) {
             const c = this.peek();
 
             if (isspace(c)) {
+                if (c === "\n") {
+                    this.line++;
+                    this.col = 0;
+                }
+                this.col++;
                 this.adv();
                 continue;
             } else if (isdigit(c)) {
@@ -42,13 +51,13 @@ export class Lexer {
                         continue;
                     case "(":
                         this.adv();
-                        return new Token(Toktype.LPAREN);
+                        return this.tok(Toktype.LPAREN);
                     case ")":
                         this.adv();
-                        return new Token(Toktype.RPAREN);
+                        return this.tok(Toktype.RPAREN);
                     case "'":
                         this.adv();
-                        return new Token(Toktype.QUOT);
+                        return this.tok(Toktype.QUOT);
                     case '"':
                         this.adv();
                         return this.string();
@@ -56,26 +65,26 @@ export class Lexer {
                         switch (this.peekn()) {
                             case "(":
                                 this.advn(2);
-                                return new Token(Toktype.VSTART);
+                                return this.tok(Toktype.VSTART);
                             case "\\":
                                 this.adv();
                                 return this.character();
                             case "t":
                                 this.advn(2);
-                                return new Token(Toktype.BOOLEAN, "", 0, true);
+                                return this.tok(Toktype.BOOLEAN, "", 0, true);
                             case "f":
                                 this.advn(2);
-                                return new Token(Toktype.BOOLEAN, "", 0, false);
+                                return this.tok(Toktype.BOOLEAN, "", 0, false);
                         }
                     case "+":
                     case "-":
                         this.adv();
-                        return new Token(Toktype.IDENT, c);
+                        return this.tok(Toktype.IDENT, c);
                     case ".":
                         this.adv();
                         if (this.peek() === "." && this.peekn() === ".") {
                             this.advn(2);
-                            return new Token(Toktype.IDENT, "...");
+                            return this.tok(Toktype.IDENT, "...");
                         } else {
                             throw new Error("lex error: illegal identifier");
                         }
@@ -88,7 +97,7 @@ export class Lexer {
                 }
             }
         }
-        return new Token(Toktype.EOF);
+        return this.tok(Toktype.EOF);
     }
     private number() {
         const start = this.getpos();
@@ -97,7 +106,7 @@ export class Lexer {
         } while (isdigit(this.peek()));
         const end = this.getpos();
         
-        return new Token(
+        return this.tok(
             Toktype.NUMBER, "", 
             Number.parseInt(this.slice(start, end))
         );
@@ -114,9 +123,9 @@ export class Lexer {
         const keyword = this.keywords.get(str);
     
         if (keyword) {
-            return new Token(keyword);
+            return this.tok(keyword);
         } else {
-            return new Token(Toktype.IDENT, str);
+            return this.tok(Toktype.IDENT, str);
         }
     }
     private character() {
@@ -125,7 +134,7 @@ export class Lexer {
         } else {
             const c = this.peek();
             this.adv();
-            return new Token(Toktype.CHARACTER, c);
+            return this.tok(Toktype.CHARACTER, c);
         }
     }
     private string() {
@@ -134,7 +143,7 @@ export class Lexer {
         for (let c: string, nc: string; !this.isend(); ) {
             if ((c = this.peek()) == '\"') {
                 this.adv();
-                return new Token(Toktype.STRING, str.join(""));
+                return this.tok(Toktype.STRING, str.join(""));
             } else if (c == '\\') {
                 if ((nc = this.peekn()) == '\\' || nc == '\"') {
                     str.push(nc);
@@ -151,6 +160,9 @@ export class Lexer {
 
         throw new Error("lex error: unterminated string");
     }
+    private tok(type: Toktype, sval = "", nval = 0, bval = false) {
+        return new Token(type, sval, nval, bval, this.col, this.line);
+    }
     private peek() {
         return this.src.charAt(this.sp);
     }
@@ -158,9 +170,11 @@ export class Lexer {
         return this.src.charAt(this.sp + 1);
     }
     private adv() {
+        this.col++;
         return this.sp++;
     }
     private advn(n: number) {
+        this.col += n;
         return this.sp += n;
     }
     private isend() {

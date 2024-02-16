@@ -1,5 +1,5 @@
 import { Lexer } from "./lex";
-import { Node, Terminal, Token, Nodetype, Toktype } from "./types";
+import { Node, Terminal, Token, Nodetype, Toktype, Panic } from "./types";
 
 export class Parser {
     private readonly lexer: Lexer;
@@ -8,9 +8,6 @@ export class Parser {
         this.lexer = new Lexer();
     }
 
-    public init(src: string) {
-        this.lexer.init(src);
-    }
     public parse(str: string): Node {
         this.lexer.init(str);
     
@@ -29,33 +26,47 @@ export class Parser {
         return new Node(Nodetype.PROGRAM, ...forms);
     }
     private form(repeat = false): Node | null {
-        const tok = this.lexer.gettok();
-        switch (tok.type) {
-            case Toktype.BOOLEAN:
-            case Toktype.NUMBER:
-            case Toktype.IDENT:
-            case Toktype.QUOT:
-                this.lexer.ungettok(tok);
-                return this.expression() as Node;
-            case Toktype.LPAREN: {
-                const ntok = this.lexer.gettok();
-                switch (ntok.type) {
-                    case Toktype.DEFINE:
-                        this.lexer.ungettok(ntok, tok);
-                        return this.variable_definition();
-                    case Toktype.IF:
-                    case Toktype.LAMBDA:
-                    default:
-                        this.lexer.ungettok(ntok, tok);
-                        return this.expression() as Node;
-                }
-            }
-            default:
-                if (!repeat) throw new Error("parsing error at form()");
-                else {
+        try {
+            const tok = this.lexer.gettok();
+            switch (tok.type) {
+                case Toktype.BOOLEAN:
+                case Toktype.NUMBER:
+                case Toktype.IDENT:
+                case Toktype.QUOT:
                     this.lexer.ungettok(tok);
-                    return null;
+                    return this.expression() as Node;
+                case Toktype.LPAREN: {
+                    const ntok = this.lexer.gettok();
+                    switch (ntok.type) {
+                        case Toktype.DEFINE:
+                            this.lexer.ungettok(ntok, tok);
+                            return this.variable_definition();
+                        case Toktype.IF:
+                        case Toktype.LAMBDA:
+                        default:
+                            this.lexer.ungettok(ntok, tok);
+                            return this.expression() as Node;
+                    }
                 }
+                default:
+                    if (tok.type === Toktype.EOF) {
+                        return null;
+                    } else if (repeat) {
+                        this.lexer.ungettok(tok);
+                        return null;
+                    } else {
+                        throw new Error("parsing error at form()");
+                    }
+            }
+        } catch (e) {
+            if (e instanceof Panic) {
+                const { col, line } = e.offendingToken;
+                console.error(`PARSING ERROR: ${e.message} (${line}:${col})`);
+                this.sync();
+                return this.form();
+            } else {
+                throw e;
+            }
         }
     }
     private variable_definition() {
@@ -93,7 +104,7 @@ export class Parser {
                 }
             }
             default:
-                if (!repeat) throw new Error("parsing error at expression();");
+                if (!repeat) throw this.panic(tok);
                 else {
                     this.lexer.ungettok(tok);
                     return null;
@@ -108,7 +119,7 @@ export class Parser {
             case Toktype.IDENT:
                 return new Terminal(tok);
             default:
-                throw new Error("parsing error at constant()");
+                throw this.panic(tok);
         }
     }
     private application(): Node {
@@ -189,7 +200,7 @@ export class Parser {
                 return l;
             }
             default:
-                if (!repeat) throw new Error("parse error at datum()");
+                if (!repeat) throw this.panic(tok);
                 else {
                     this.lexer.ungettok(tok);
                     return null;
@@ -197,12 +208,23 @@ export class Parser {
         }
     }
 
+    private sync() {
+        let tok = this.lexer.gettok();
+        while (tok.type !== Toktype.RPAREN && tok.type !== Toktype.EOF) {
+            tok = this.lexer.gettok();
+        }
+    }
+    private panic(tok: Token) {
+        this.lexer.ungettok(tok);
+        throw new Panic(`unexpected ${Toktype[tok.type]}`, tok);
+    }
     private expect(expected: Toktype) {
         const tok = this.lexer.gettok();
         if (tok.type === expected) {
             return tok;
         } else {
-            throw new Error(`parse error: expected ${Toktype[expected]}, got ${Toktype[tok.type]}`)
+            this.lexer.ungettok(tok);
+            throw new Panic(`expected ${Toktype[expected]}, got ${Toktype[tok.type]}`, tok);
         }
     }
     private match(expected: Toktype) {

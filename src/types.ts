@@ -31,12 +31,23 @@ export class Token {
     public readonly sval: string;
     public readonly nval: number;
     public readonly bval: boolean;
+    public readonly col: number;
+    public readonly line: number;
 
-    constructor (type: Toktype, sval = "", nval = 0, bval = false) {
+    constructor (
+        type: Toktype, 
+        sval: string, 
+        nval: number, 
+        bval: boolean,
+        col: number,
+        line: number
+    ) {
         this.type = type;
         this.sval = sval;
         this.nval = nval;
         this.bval = bval;
+        this.col = col;
+        this.line = line;
     }
 }
 
@@ -72,3 +83,10 @@ export class Terminal extends Node {
     }
 }
 export type Env = Map<string, any>;
+export class Panic extends Error {
+    public readonly offendingToken: Token;
+    constructor (message: string, offendingToken: Token) {
+        super(message);
+        this.offendingToken = offendingToken;
+    }
+}
