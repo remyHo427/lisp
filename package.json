@@ -5,7 +5,8 @@
   "license": "MIT",
   "dependencies": {},
   "scripts": {
-    "build": "esbuild --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
+    "cc": "esbuild --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
+    "cc:mini": "esbuild --minify --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
     "repl": "node ./dist/main.js --repl",
     "rn": "node ./dist/main.js ./src/main.ss"
   },

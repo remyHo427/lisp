@@ -27,53 +27,54 @@ export class Env {
         }
         return null;
     }
-}
-export function init_global(): Env {
-    const global = new Env();
+    public static init_global() {
+        const global = new Env();
+        const { num_only, arity, bool_only } = Env;
 
-    global.set("+", num_only((...a) => a.reduce((a, b) => a + b, 0)));
-    global.set("-", num_only((f, ...a) => f - a.reduce((a, b) => a + b, 0)));
-    global.set("*", num_only((...a) => a.reduce((a, b) => a * b, 1)));
-    global.set("/", num_only((f, ...a) => f / a.reduce((a, b) => a * b, 1)));
-    global.set("=", arity(2, num_only((a, b) => a === b)));
-    global.set(">=", arity(2, num_only((a, b) => a >= b)));
-    global.set("<=", arity(2, num_only((a, b) => a <= b)));
-    global.set(">", arity(2, num_only((a, b) => a > b)));
-    global.set("<", arity(2, num_only((a, b) => a < b)));
-    global.set("and", bool_only((...a) => a.every(c => c === true)));
-    global.set("or", bool_only((...a) => a.some(c => c === true)));
-    global.set("not", arity(1, bool_only(a => !a)));
-    global.set("car", arity(1, List.car));
-    global.set("cdr", arity(1, List.cdr));
-    global.set("null?", arity(1, List.isNull));
-    global.set("p", console.log);
-    
-    return global;
-}
-function num_only(fn: (...args: number[]) => any) {
-    return (...args: unknown[]) => {
-        if (args.some(a => typeof a !== "number")) {
-            throw new Error("non-number argument encountered");
-        } else {
-            return fn(...args as number[]);
+        global.set("+", num_only((...a) => a.reduce((a, b) => a + b, 0)));
+        global.set("-", num_only((f, ...a) => f - a.reduce((a, b) => a + b, 0)));
+        global.set("*", num_only((...a) => a.reduce((a, b) => a * b, 1)));
+        global.set("/", num_only((f, ...a) => f / a.reduce((a, b) => a * b, 1)));
+        global.set("=", arity(2, num_only((a, b) => a === b)));
+        global.set(">=", arity(2, num_only((a, b) => a >= b)));
+        global.set("<=", arity(2, num_only((a, b) => a <= b)));
+        global.set(">", arity(2, num_only((a, b) => a > b)));
+        global.set("<", arity(2, num_only((a, b) => a < b)));
+        global.set("and", bool_only((...a) => a.every(c => c === true)));
+        global.set("or", bool_only((...a) => a.some(c => c === true)));
+        global.set("not", arity(1, bool_only(a => !a)));
+        global.set("car", arity(1, List.car));
+        global.set("cdr", arity(1, List.cdr));
+        global.set("null?", arity(1, List.isNull));
+        global.set("p", console.log);
+        
+        return global;
+    }
+    private static num_only(fn: (...args: number[]) => any) {
+        return (...args: unknown[]) => {
+            if (args.some(a => typeof a !== "number")) {
+                throw new Error("non-number argument encountered");
+            } else {
+                return fn(...args as number[]);
+            }
         }
     }
-}
-function bool_only(fn: (...args: boolean[]) => any) {
-    return (...args: unknown[]) => {
-        if (args.some(a => typeof a !== "boolean")) {
-            throw new Error("non-boolean argument encountered");
-        } else {
-            return fn(...args as boolean[]);
+    private static bool_only(fn: (...args: boolean[]) => any) {
+        return (...args: unknown[]) => {
+            if (args.some(a => typeof a !== "boolean")) {
+                throw new Error("non-boolean argument encountered");
+            } else {
+                return fn(...args as boolean[]);
+            }
         }
     }
-}
-function arity(n: number, fn: (...args: any[]) => any) {
-    return (...args: any[]) => {
-        if (args.length != n) {
-            throw new Error("arity mismatch");
-        } else {
-            return fn(...args);
+    private static arity(n: number, fn: (...args: any[]) => any) {
+        return (...args: any[]) => {
+            if (args.length != n) {
+                throw new Error("arity mismatch");
+            } else {
+                return fn(...args);
+            }
         }
     }
 }
