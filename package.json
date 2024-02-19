@@ -8,7 +8,7 @@
     "cc": "esbuild --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
     "cc:mini": "esbuild --minify --platform=node --bundle --outfile=dist/main.js ./src/main.ts",
     "repl": "node ./dist/main.js --repl",
-    "compile": "node ./dist/main.js --compile",
+    "compile": "node ./dist/main.js --compile ./src/main.ss",
     "rn": "node ./dist/main.js ./src/main.ss"
   },
   "devDependencies": {

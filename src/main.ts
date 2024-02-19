@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import fs, { writeFile } from "node:fs";
 import util from "node:util";
 import process from "node:process";
 import { createInterface } from "node:readline";
@@ -15,7 +15,7 @@ const argv = process.argv.slice(2);
     if (flags.includes("--repl")) {
         repl();
     } else if (flags.includes("--compile")) {
-        compile();
+        compile(files[0]);
     } if (files.length == 1) {
         await run(files[0]);
     }
@@ -37,20 +37,15 @@ async function repl() {
     }
 }
 
-async function compile() {
-    const rl = createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: false
-    });
-    const compiler = new Compiler();
+async function compile(file: string) {
+    const readfile = util.promisify(fs.readFile);
+    const src = await readfile(file, "utf-8");
     const parser = new Parser();
+    const compiler = new Compiler();
 
-    process.stdout.write("> ");
-    for await (const l of rl) {
-        console.log(compiler.compile(parser.parse(l)));
-        process.stdout.write("> ");
-    }
+    const writefile = util.promisify(fs.writeFile);
+    const out = compiler.compile(parser.parse(src));
+    await writefile(`${file.slice(0, file.length - 3)}.js`, out);
 }
 
 async function run(file: string) {
