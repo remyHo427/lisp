@@ -2,10 +2,15 @@ todo
     - account for difference in compile.ts and eval.ts
         - primitive functions such as *, -, =, / cannot be treated as valid
           identifier in output js, need to map to operators
-        - need type-checking to ensure output js is correct
-        - need a target more suitable than js to output to
-    - add syntax for declaring types
+        - need type-checking to ensure output js is correct (see 1.)
+        - need a target more suitable than js to output to (see 2.)
+    - modify formal grammar
+        - add (cond ...)
+    - implement proper TCO (which is why we can't use js as output)
 
 optional todo
     - re-write project in a language with explicit memory management
       (preferably rust), prototype in ts first.
+
+1. https://mukulrathi.com/create-your-own-programming-language/intro-to-type-checking/
+2. https://gist.github.com/o11c/6b08643335388bbab0228db763f99219
