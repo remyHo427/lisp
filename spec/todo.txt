@@ -1,0 +1,11 @@
+todo
+    - account for difference in compile.ts and eval.ts
+        - primitive functions such as *, -, =, / cannot be treated as valid
+          identifier in output js, need to map to operators
+        - need type-checking to ensure output js is correct
+        - need a target more suitable than js to output to
+    - add syntax for declaring types
+
+optional todo
+    - re-write project in a language with explicit memory management
+      (preferably rust), prototype in ts first.
