@@ -67,7 +67,7 @@ export class Lexer {
                                 this.advn(2);
                                 return this.tok(Toktype.VSTART);
                             case "\\":
-                                this.adv();
+                                this.advn(2);
                                 return this.character();
                             case "t":
                                 this.advn(2);

@@ -3,12 +3,22 @@ import { List } from "./list";
 export class Env {
     private readonly parent: Env | null;
     private readonly vars: Map<string, any>;
+    private readonly syms: Map<string, symbol>;
 
     constructor (parent?: Env) {
         this.parent = parent || null;
         this.vars = new Map(parent ? parent.getAll() : undefined);
+        this.syms = new Map(parent ? parent.getAllSyms() : undefined);
     }
 
+    public symset(k: string) {
+        const sym = Symbol();
+        this.syms.set(k, sym);
+        return sym;
+    }
+    public symget(k: string) {
+        return this.syms.get(k);
+    }
     public set(k: string, v: any) {
         this.vars.set(k, v);
     }
@@ -17,6 +27,9 @@ export class Env {
     }
     public getAll() {
         return this.vars;
+    }
+    public getAllSyms() {
+        return this.syms;
     }
     public lookup(k: string) {
         for (let env: Env | null = this; env; env = this.parent) {
@@ -46,6 +59,7 @@ export class Env {
         global.set("car", arity(1, List.car));
         global.set("cdr", arity(1, List.cdr));
         global.set("null?", arity(1, List.isNull));
+        global.set("eq?", arity(2, (a, b) => a === b));
         global.set("p", console.log);
         
         return global;

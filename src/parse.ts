@@ -32,6 +32,8 @@ export class Parser {
                 case Toktype.BOOLEAN:
                 case Toktype.NUMBER:
                 case Toktype.IDENT:
+                case Toktype.STRING:
+                case Toktype.CHARACTER:
                 case Toktype.QUOT:
                     this.lexer.ungettok(tok);
                     return this.expression() as Node;
@@ -84,6 +86,8 @@ export class Parser {
             case Toktype.BOOLEAN:
             case Toktype.NUMBER:
             case Toktype.IDENT:
+            case Toktype.STRING:
+            case Toktype.CHARACTER:
                 this.lexer.ungettok(tok);
                 return this.constant();
             case Toktype.QUOT:
@@ -117,6 +121,8 @@ export class Parser {
             case Toktype.BOOLEAN:
             case Toktype.NUMBER:
             case Toktype.IDENT:
+            case Toktype.CHARACTER:
+            case Toktype.STRING:
                 return new Terminal(tok);
             default:
                 throw this.panic(tok);

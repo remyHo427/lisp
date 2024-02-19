@@ -1,4 +1,4 @@
-import { Node, Terminal, Nodetype, Toktype } from "./types";
+import { Node, Terminal, Nodetype, Toktype, Token } from "./types";
 import { List } from "./list";
 import { Env } from "./env";
 
@@ -32,7 +32,7 @@ export class Evaluator {
     public eval_expr(expr: Node, env: Env) {
         switch (expr.type) {
             case Nodetype.TOKEN:
-                return this.eval_tok(expr as Terminal, env);
+                return this.eval_tok((expr as Terminal).token, env);
             case Nodetype.APPLI:
                 return this.eval_apply(expr, env);
             case Nodetype.IF:
@@ -45,14 +45,22 @@ export class Evaluator {
                 console.log("unsupported expression type: ", Nodetype[expr.type]);
         }
     }
-    public eval_tok(tok: Terminal, env: Env) {
-        switch (tok.token.type) {
+    public eval_tok(tok: Token, env: Env, is_datum = false) {
+        switch (tok.type) {
             case Toktype.BOOLEAN:
-                return tok.token.bval;
+                return tok.bval;
             case Toktype.NUMBER:
-                return tok.token.nval;
+                return tok.nval;
+            case Toktype.CHARACTER:
+                return tok.sval;
+            case Toktype.STRING:
+                return tok.sval;
             case Toktype.IDENT:
-                return env.get(tok.token.sval);
+                if (is_datum) {
+                    return this.eval_symbol(tok.sval, env);
+                } else {
+                    return env.get(tok.sval);
+                }
         }
     }
     public eval_apply(expr: Node, env: Env) {
@@ -130,6 +138,10 @@ export class Evaluator {
         return head;
     }
     public eval_datum(datum: Node, env: Env) {
-        return this.eval_tok(datum.children[0] as Terminal, env);
+        const tok = (datum.children[0] as Terminal).token;
+        return this.eval_tok(tok, env, true);
+    }
+    public eval_symbol(id: string, env: Env) {
+        return env.symget(id) || env.symset(id);
     }
 }
