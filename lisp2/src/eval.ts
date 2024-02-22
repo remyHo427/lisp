@@ -1,12 +1,13 @@
-import { Node, Terminal, Nodetype, Toktype, Token } from "./types";
+import { Node, Terminal, Nodetype, Toktype, Token, Value, val_type } from "./types";
 import { List } from "./list";
 import { Env } from "./env";
 
 export default class Evaluator {
     private readonly global: Env;
-
+    private readonly nil: Value;
     constructor () {
         this.global = Env.init_global();
+        this.nil = new Value(val_type.NIL, null);
     }
 
     public evaluate_program(node: Node) {
@@ -14,11 +15,11 @@ export default class Evaluator {
             this.eval_form(form, this.global);
         }
     }
-    public evaluate_form(node: Node) {
+    public evaluate_form(node: Node): Value {
         return this.eval_form(node, this.global);
     }
 
-    private eval_form(form: Node, env: Env) {
+    private eval_form(form: Node, env: Env): Value {
         if (form.type === Nodetype.VAR_DEF) {
             return this.eval_vardef(form, env);
         } else {
@@ -26,13 +27,13 @@ export default class Evaluator {
         }
     }
 
-    private eval_vardef(vardef: Node, env: Env) {
+    private eval_vardef(vardef: Node, env: Env): Value {
         const [ id, expr ] = vardef.children;
         env.set((id as Terminal).token.sval, this.eval_expr(expr, env));
-        return null;
+        return this.nil;
     }
 
-    private eval_expr(expr: Node, env: Env) {
+    private eval_expr(expr: Node, env: Env): Value {
         switch (expr.type) {
             case Nodetype.TOKEN:
                 return this.eval_tok((expr as Terminal).token, env);
@@ -45,35 +46,42 @@ export default class Evaluator {
             case Nodetype.QUOTED:
                 return this.eval_quoted(expr, env);
             default:
-                console.log("unsupported expression type: ", Nodetype[expr.type]);
+                throw new Error("unsupported expression type");
         }
     }
-    private eval_tok(tok: Token, env: Env, is_datum = false) {
+    private eval_tok(tok: Token, env: Env, is_datum = false): Value {
         switch (tok.type) {
             case Toktype.BOOLEAN:
-                return tok.bval;
+                return new Value(val_type.BOOLEAN, tok.bval);
             case Toktype.NUMBER:
-                return tok.nval;
+                return new Value(val_type.NUMBER, tok.nval);
             case Toktype.CHARACTER:
-                return tok.sval;
+                return new Value(val_type.CHARACTER, tok.sval);
             case Toktype.STRING:
-                return tok.sval;
+                return new Value(val_type.STRING, tok.sval);
             case Toktype.IDENT:
                 if (is_datum) {
                     return this.eval_symbol(tok.sval, env);
                 } else {
-                    return env.get(tok.sval);
+                    const v = env.get(tok.sval);
+                    if (v) {
+                        return v;
+                    } else { 
+                        throw new Error(`eval error: ${tok.sval} is undefined`);
+                    }
                 }
+            default:
+                throw new Error("eval error: unknown tok type");
         }
     }
     private eval_apply(expr: Node, env: Env) {
         const [ head, ...elems ] = expr.children;
         const hv = this.eval_expr(head, env);
 
-        if (typeof hv !== "function") {
-            throw new Error("eval error in eval_apply()");
+        if (hv.type !== val_type.FUNCTION) {
+            throw new Error("eval error: expression not callable");
         } else {
-            return hv(...elems.map((e) => this.eval_expr(e, env)));
+            return (hv.value as Function)(...elems.map((e) => this.eval_expr(e, env)));
         }
     }
     private eval_if(expr: Node, env: Env) {
@@ -83,7 +91,7 @@ export default class Evaluator {
             : this.eval_expr(f, env);
     }
     private eval_lambda(expr: Node, env: Env) {
-        return (...args: any[]) => {
+        const fn = (...args: any[]) => {
             const [ formals, body ] = expr.children;
             const local = new Env(env);
 
@@ -95,6 +103,7 @@ export default class Evaluator {
             
             return this.eval_body(body, local);
         }
+        return new Value(val_type.FUNCTION, fn);
     }
     private eval_body(expr: Node, env: Env) {
         let final: any;
@@ -112,11 +121,13 @@ export default class Evaluator {
                 return this.eval_datum(quoted, env);
             case Nodetype.LIST:
                 return this.eval_list(quoted, env);
+            default:
+                throw new Error("eval error: unknown quoted expression type");
         }
     }
-    private eval_list(list: Node, env: Env): List {
+    private eval_list(list: Node, env: Env): Value {
         if (!list.children.length) {
-            return List.getNull();
+            return new Value(val_type.LIST, List.getNull());
         }
         
         let curr: List;
@@ -138,13 +149,13 @@ export default class Evaluator {
         }
         prev.next = List.getNull();
 
-        return head;
+        return new Value(val_type.LIST, head);
     }
     private eval_datum(datum: Node, env: Env) {
         const tok = (datum.children[0] as Terminal).token;
         return this.eval_tok(tok, env, true);
     }
-    private eval_symbol(id: string, env: Env) {
+    private eval_symbol(id: string, env: Env): Value {
         return env.symget(id) || env.symset(id);
     }
 }

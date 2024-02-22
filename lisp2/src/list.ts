@@ -1,11 +1,13 @@
+import { Value } from "./types";
+
 export class List {
     public next: List | null;
-    public value: unknown;
+    public value: Value | null;
     private readonly sym: Symbol;
 
     private static readonly NULL = new List(null, null);
 
-    constructor (next: List | null, value: unknown) {
+    constructor (next: List | null, value: Value | null) {
         this.next = next;
         this.value = value;
         this.sym = Symbol();
