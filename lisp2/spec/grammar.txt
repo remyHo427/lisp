@@ -1,0 +1,70 @@
+1 program
+    : form_list*
+    ;
+
+2 form
+    : definition
+    | expression
+    ;
+
+3 definition
+    : variable-definition
+    | syntax-definition
+    | LPAREN BEGIN definition* RPAREN
+    | LPAREN LET_SYNTAX LPAREN syntax-binding* RPAREN definition* RPAREN
+    | LPAREN LETREC_SYNTAX LPAREN syntax-binding* RPAREN definition* RPAREN
+    ;
+
+4 variable-definition
+    : LPAREN DEFINE IDENT expression RPAREN
+    | LPAREN DEFINE LPAREN IDENT IDENT* RPAREN body RPAREN
+    | LPAREN DEFINE LPAREN IDENT IDENT* DOT IDENT RPAREN body RPAREN
+    ;
+
+4 syntax-definition
+    : LPAREN DEFINE_SYNTAX IDENT transformer-expression RPAREN
+    ;
+
+4 syntax-binding
+    : LPAREN IDENT transformer-expression RPAREN
+    ;
+
+5 expression
+    : boolean
+    | number
+    | character
+    | string
+    | variable
+    | QUOT datum
+    | LPAREN QUOTE datum RPAREN
+    | LPAREN LAMBDA formals body RPAREN
+    | LPAREN IF expression expression expression RPAREN
+    | LPAREN IF expression expression RPAREN
+    | LPAREN SET IDENT expression RPAREN
+    | application
+    | LPAREN LET_SYNTAX LPAREN syntax-binding* RPAREN expression+ RPAREN
+    | LPAREN LETREC_SYNTAX LPAREN syntax-binding* RPAREN expression+ RPAREN
+    ;
+
+6 formals
+    : IDENT
+    | LPAREN IDENT* RPAREN
+    | LPAREN IDENT+ DOT IDENT RPAREN
+    ;
+
+6 body
+    : definition* expression+
+    ;
+
+6 application
+    : LPAREN expression expression* RPAREN
+
+6 datum
+    : BOOLEAN
+    | NUMBER
+    | CHARACTER
+    | STRING
+    | IDENT
+    | list
+    | vector
+    ;
