@@ -1,0 +1,233 @@
+TOKEN
+    : IDENT
+    | BOOLEAN
+    | NUMBER
+    | CHARACTER
+    | STRING
+    | "("
+    | ")"
+    | "#("
+    | "#u8c"
+    | "'"
+    | "`"
+    | ","
+    | ",@"
+    | "."
+    ;
+
+DELIMITER
+    : WHITESPACE
+    | VERTICAL_LINE
+    | "("
+    | ")"
+    | '"'
+    | ";"
+    ;
+
+INTRALINE_WHITESPACE
+    : SPACE_OR_TAB
+    ;
+
+WHITESPACE
+    : INTRALINE_WHITESPACE
+    | LINE_ENDING
+    ;
+
+VERTICAL_LINE
+    : "|"
+    ;
+
+LINE_ENDING
+    : NEWLINE
+    | RETURN NEWLINE
+    | RETURN
+    ;
+
+COMMENT
+    : ";" <all subsequent characters up to a line ending>
+    | NESTED_COMMENT
+    | "#;" INTERTOKEN_SPACE DATUM
+    ;
+
+NESTED_COMMENT
+    : "#|" COMMENT_TEXT COMMENT_CONT* "|#"
+
+COMMENT_TEXT
+    : <character sequence not containing #| or |#>
+
+COMMENT_CONT
+    : NESTED_COMMENT COMMENT_TEXT
+    ;
+
+DIRECTIVE
+    : "#!fold-case"
+    | "#!no-fold-case"
+    ;
+// NOTE: it is ungrammatical to follow a directive with anything
+//       but a DELIMITER or the end of file
+
+ATMOSPHERE
+    : WHITESPACE
+    | COMMENT
+    | DIRECTIVE
+    ;
+
+INTERTOKEN_SPACE
+    : ATMOSPHERE*
+    ;
+
+IDENT
+    : INTIIAL SUBSEQUENT*
+    | VERTICAL_LINE SYMBOL_ELEMENT* VERTICAL_LINE
+    | PECULAR_IDENTIFIER
+    ;
+
+INTIIAL
+    : LETTER
+    | SPECIAL_INITIAL
+    ;
+
+LETTER
+    : "a" | "b" | ... | "z"
+    | "A" | "B" | ... | "Z"
+    ;
+
+SPECIAL_INITIAL
+    : INITIAL
+    | DIGIT
+    | SPECIAL_SUBSEQUENT
+    ;
+
+DIGIT
+    : "0" | "1" | ... | "9"
+    ;
+
+HEX_DIGIT
+    : DIGIT
+    | "a" | "b" | ... | "f"
+    ;
+
+EXPLICIT_SIGN
+    : "+"
+    | "-"
+    ;
+
+SPECIAL_SUBSEQUENT
+    : EXPLICIT_SIGN
+    | "."
+    | "@"
+    ;
+
+INLINE_HEX_ESCAPE
+    : "\x" HEX_SCALAR_VALUE ";"
+
+HEX_SCALAR_VALUE
+    : HEX_DIGIT+
+    ;
+
+MNEMONIC_ESCAPE
+    : "\a"
+    | "\b"
+    | "\t"
+    | "\n"
+    | "\r"
+    ;
+
+PECULAR_IDENTIFIER
+    : EXPLICIT_SIGN
+    | EXPLICT_SIGN SIGN_SUBSEQUENT SUBSEQUENT*
+    | EXPLICIT_SIGN "." DOT_SUBSEQUENT SUBSEQUENT*
+    | "." DOT_SUBSEQUENT SUBSEQUENT*
+    ;
+
+DOT_SUBSEQUENT
+    : SIGN_SUBSEQUENT
+    | "."
+    ;
+
+SIGN_SUBSEQUENT
+    : INITIAL
+    | EXPLICIT_SIGN
+    | "@"
+    ;
+
+SYMBOL_ELEMENT
+    : <any character other than VERTICAL_LINE or "\">
+    | INLINE_HEX_ESCAPE
+    | MNEMONIC_ESCAPE
+    ;
+
+BOOLEAN
+    : "#t"
+    | "#f"
+    | "#true"
+    | "#false"
+    ;
+
+CHARACTER
+    : "#\" <any character>
+    | "#\" CHARACTER_NAME
+    | "#\x" HEX_SCALAR_VALUE
+    ;
+
+CHARACTER_NAME
+    : "alarm"
+    | "backspace"
+    | "delete"
+    | "escape"
+    | "newline"
+    | "null"
+    | "return"
+    | "space"
+    | "tab"
+    ;
+
+STRING
+    : '"' STRING_ELEMENT* '"'
+    ;
+
+STRING_ELEMENT
+    : <any character other than " or \>
+    | MNEMONIC_ESCAPE
+    | '\"'
+    | '\\'
+    | '\' INTRALINE_WHITESPACE* LINE_ENDING INTRALINE_WHITESPACE*
+    | INLINE_HEX_ESCAPE
+    ;
+
+BYTEVECTOR
+    : "#u8(" BYTE* ")"
+    ;
+
+BYTE
+    : <any exact integer between 0 and 255>
+    ;
+
+NUMBER
+    : NUM_2
+    | NUM_8
+    | NUM_10
+    | NUM_16
+    ;
+
+// R = 2, 8, 10, 16
+NUM_R
+    : PREFIX_R
+    | COMPLEX_R
+    ;
+
+COMPLEX_R
+    : REAL_R
+    | REAL_R "@" REAL_R
+    | REAL_R "+" UREAL_R "i"
+    | REAL_R "-" UREAL_R "i"
+    | "+" UREAL_R "i"
+    | "-" UREAL_R "i"
+    | INFNAN "i"
+    | "+" "i"
+    | "-" "i"
+    ;
+
+
+
+

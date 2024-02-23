@@ -81,7 +81,10 @@ export default class Evaluator {
         if (hv.type !== val_type.FUNCTION) {
             throw new Error("eval error: expression not callable");
         } else {
-            return (hv.value as Function)(...elems.map((e) => this.eval_expr(e, env)));
+            const args = elems
+                .map((e) => this.eval_expr(e, env))
+                .map((v) => v.value);
+            return (hv.value as Function)(...args);
         }
     }
     private eval_if(expr: Node, env: Env) {
