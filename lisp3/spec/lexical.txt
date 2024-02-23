@@ -77,7 +77,7 @@ INTERTOKEN_SPACE
     ;
 
 IDENT
-    : INTIIAL SUBSEQUENT*
+    : INITIAL SUBSEQUENT*
     | VERTICAL_LINE SYMBOL_ELEMENT* VERTICAL_LINE
     | PECULAR_IDENTIFIER
     ;
@@ -228,6 +228,140 @@ COMPLEX_R
     | "-" "i"
     ;
 
+REAL_R
+    : SIGN UREAL_R
+    | INFNAN
+    ;
 
+UREAL_R
+    : UINTEGER_R
+    | UINTEGER_R "/" UINTEGER_R
+    | DECIMAL_R
+    ;
 
+DECIMAL_10
+    : UINTEGER_10 SUFFIX
+    | "." DIGIT_10+ SUFFIX
+    | DIGIT_10+ "." DIGIT_10* SUFFIX
+    ;
 
+UINTEGER_R
+    : DIGIT_R+
+    ;
+
+PREFIX_R
+    : RADIX_R EXACTNESS
+    | EXACTNESS RADIX_R
+    ;
+
+INFNAN
+    : "+inf.0"
+    | "-inf.0"
+    | "+nan.0"
+    | "-nan.0"
+    ;
+
+SUFFIX
+    : EMPTY
+    | EXPONENT_MARKER SIGN DIGIT_10+
+    ;
+
+EXPONENT_MARKER
+    : "e"
+    ;
+
+SIGN
+    : EMPTY
+    | "+"
+    | "-"
+    ;
+
+EXACTNESS
+    : EMPTY
+    | "#i"
+    | "#e"
+    ;
+
+RADIX_2
+    : "#b"
+    ;
+
+RADIX_8
+    : "#o"
+    ;
+
+RADIX_10
+    : EMPTY
+    | "#d"
+    ;
+
+RADIX_16
+    : "#x"
+    ;
+
+DIGIT_2
+    : "0" | "1"
+    ;
+
+DIGIT_8
+    : "0" | "1" | ... | "8"
+    ;
+
+DIGIT_10
+    : DIGIT
+    ;
+
+DIGIT_16
+    : DIGIT
+    | "a" | "b" | ... | "f"
+    ;
+
+DATUM
+    : SIMPLE_DATUM
+    | COMPOUND_DATUM
+    | LABEL "=" DATUM
+    | LABEL "#"
+    ;
+
+SIMPLE_DATUM
+    : BOOLEAN
+    | NUMBER
+    | CHARACTER
+    | STRING
+    | SYMBOL
+    | BYTEVECTOR
+    ;
+
+SYMBOL
+    : IDENT
+    ;
+
+COMPOUND_DATUM
+    : LIST
+    | VECTOR
+    | ABBREVIATION
+    ;
+
+LIST
+    : "(" DATUM* ")"
+    | "(" DATUM+ "." DATUM ")"
+    ;
+
+ABBREVIATION
+    : ABBREV_PREFIX DATUM
+    ;
+
+ABBREV_PREFIX
+    : "'"
+    | "`"
+    | ","
+    | ",@"
+    ;
+
+VECTOR
+    : "#(" DATUM* ")"
+    ;
+
+LABEL
+    : "#" UINTEGER_10
+    ;

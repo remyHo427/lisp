@@ -1,0 +1,46 @@
+program
+    : import-declaration+ command-or-definition+
+    ;
+
+command-or-definition
+    : command
+    | definition
+    | "(" "begin" command-or-definition+ ")"
+    ;
+
+definition
+    : "(" "define" identifier expression ")"
+    | syntax-definition
+    | "(" "define-values" formals body ")"
+    | "(" "define-record-type" identifier constructor identifier field-spec* ")"
+    | "(" "begin" definition* ")"
+    ;
+
+def-formals
+    : identifier*
+    | identifier* "." identifier
+    ;
+
+constructor
+    : "(" identifier field-name* ")"
+    ;
+
+field-spec
+    : "(" field-name accessor ")"
+    | "(" field-name accessor mutator ")"
+    ;
+
+field-name
+    : identifier
+    ;
+
+accessor
+    : identifier
+
+mutator
+    : identifier
+    ;
+
+syntax-definition
+    : "(" "define-syntax" keyword transformer-spec ")"
+    ;
