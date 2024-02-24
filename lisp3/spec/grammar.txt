@@ -370,3 +370,22 @@ export-spec
     | "(" "rename" identifier identifier ")"
     ;
 
+import-set
+    : library-name
+    | "(" "only" import-set identifier+ ")"
+    | "(" "except" import-set identifier+ ")"
+    | "(" "prefix" import-set identifier ")"
+    | "(" "rename" import-set "(" identifier identifier+ ")" ")"
+    ;
+
+cond-expand-clause
+    : "(" feature-requirement library-declaration* ")"
+    ;
+
+feature-requirement
+    : identifier
+    | library-name
+    | "(" "and" feature-requirement* ")"
+    | "(" "or" feature-requirement* ")"
+    | "(" "not" feature-requirement ")"
+    ;
